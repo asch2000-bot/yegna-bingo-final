@@ -1,1 +1,73 @@
-<!DOCTYPE html><html><head><title>Yegna Bingo</title><style>body{font-family:Arial;background:linear-gradient(135deg,#667eea,#764ba2);color:white;text-align:center;padding:50px;}h1{font-size:3em;}.status{padding:20px;background:rgba(255,255,255,0.1);border-radius:10px;}</style></head><body><h1>?? Yegna Bingo</h1><div class="status" id="status">Connecting...</div><script src="/socket.io/socket.io.js"></script><script>const socket=io();socket.on("connect",()=>{document.getElementById("status").innerHTML="? Connected to Yegna Bingo Server!";});socket.on("disconnect",()=>{document.getElementById("status").innerHTML="? Disconnected";});</script></body></html>
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Yegna Bingo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 50px;
+            margin: 0;
+        }
+        h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        .status {
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            margin: 20px auto;
+            max-width: 500px;
+            font-size: 1.2em;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        button:hover {
+            background: #45a049;
+            transform: scale(1.05);
+        }
+        .connected {
+            background: rgba(76, 175, 80, 0.3);
+        }
+        .disconnected {
+            background: rgba(244, 67, 54, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎮 Yegna Bingo</h1>
+    <p>Ethiopia's #1 Multiplayer Bingo Game!</p>
+    <div class="status" id="status">Connecting to server...</div>
+    <button onclick="window.location.reload()">🔄 Refresh Page</button>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+        
+        socket.on('connect', () => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '✅ Connected to Yegna Bingo Server!';
+            statusDiv.className = 'status connected';
+            console.log('Connected to server');
+        });
+        
+        socket.on('disconnect', () => {
+            const statusDiv = document.getElementById('status');
+            statusDiv.innerHTML = '❌ Disconnected from server';
+            statusDiv.className = 'status disconnected';
+            console.log('Disconnected from server');
+        });
+    </script>
+</body>
+</html>

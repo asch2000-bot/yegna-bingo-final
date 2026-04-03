@@ -1,4 +1,3 @@
-@"
 const express = require("express");
 const http = require("http");
 const socketIo = require("socket.io");
@@ -51,9 +50,8 @@ class Game {
   
   removePlayer(playerId) {
     this.players.delete(playerId);
-    if (this.players.size === 0) return true; // Delete game
+    if (this.players.size === 0) return true;
     if (playerId === this.hostId && this.players.size > 0) {
-      // Assign new host
       const newHost = Array.from(this.players.values())[0];
       newHost.isHost = true;
       this.hostId = newHost.id;
@@ -84,7 +82,6 @@ class Game {
     this.currentNumber = null;
     this.winner = null;
     
-    // Start auto number calling every 5 seconds
     this.numberInterval = setInterval(() => {
       if (this.status === 'active') {
         this.callNumber();
@@ -152,7 +149,6 @@ io.on("connection", (socket) => {
   });
   
   socket.on("joinGame", (data) => {
-    // Find available game
     let targetGame = null;
     for (let game of games.values()) {
       if (game.status === 'waiting' && game.players.size < 10) {
@@ -254,4 +250,3 @@ const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
 });
-"@ | Out-File -Encoding UTF8 server.js

@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Yegna Bingo - Admin Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #1a1a2e;
+            color: white;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        button {
+            background: #4caf50;
+            color: white;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .reject { background: #f44336; }
+        .approved { background: #4caf50; color: white; padding: 2px 5px; border-radius: 3px; }
+        .pending { background: #ff9800; color: white; padding: 2px 5px; border-radius: 3px; }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border-radius: 5px;
+            border: none;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #e94560, #0f3460);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Yegna Bingo - Admin Dashboard</h1>
+        
+        <div class="stats" id="stats"></div>
+        
+        <div class="card">
+            <h2>💰 Pending Deposits</h2>
+            <table id="pendingDeposits">
+                <tr><th>ID</th><th>User</th><th>Phone</th><th>Amount</th><th>Transaction</th><th>Action</th></tr>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>💸 Pending Withdrawals</h2>
+            <table id="pendingWithdrawals">
+                <tr><th>ID</th><th>User</th><th>Phone</th><th>Amount</th><th>Withdraw To</th><th>Action</th></tr>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>👥 All Users</h2>
+            <table id="users">
+                <tr><th>Name</th><th>Phone</th><th>Balance</th><th>Action</th></tr>
+            </table>
+        </div>
+        
+        <div class="card">
+            <h2>➕ Manual Balance Adjustment</h2>
+            <input type="text" id="userPhone" placeholder="User Phone">
+            <input type="number" id="adjustAmount" placeholder="Amount">
+            <select id="adjustType">
+                <option value="add">Add Balance</option>
+                <option value="deduct">Deduct Balance</option>
+            </select>
+            <button onclick="adjustBalance()">Apply</button>
+        </div>
+    </div>
+    
+    <script>
+        async function loadData() {
+            const response = await fetch('/api/admin/data');
+            const data = await response.json();
+            
+            // Update stats
+            document.getElementById('stats').innerHTML = `
+                <div class="stat-card"><div class="stat-number">${data.totalUsers}</div>Total Users</div>
+                <div class="stat-card"><div class="stat-number">${data.totalBalance}</div>Total Balance</div>
+                <div class="stat-card"><div class="stat-number">${data.pendingDeposits}</div>Pending Deposits</div>
+                <div class="stat-card"><div class="stat-number">${data.pendingWithdrawals}</div>Pending Withdrawals</div>
+            `;
+            
+            // Pending deposits
+            const depositsTable = document.getElementById('pendingDeposits');
+            depositsTable.innerHTML = '<tr><th>ID</th><th>User</th><th>Phone</th><th>Amount</th><th>Transaction</th><th>Action</th></tr>';
+            data.deposits.forEach(d => {
+                depositsTable.innerHTML += `
+                    <tr>
+                        <td>${d.id}</td>
+                        <td>${d.userName}</td>
+                        <td>${d.userPhone}</td>
+                        <td>${d.amount} Birr</td>
+                        <td>${d.transactionText}</td>
+                        <td>
+                            <button onclick="approveDeposit('${d.id}')">Approve</button>
+                            <button class="reject" onclick="rejectDeposit('${d.id}')">Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            // Pending withdrawals
+            const withdrawalsTable = document.getElementById('pendingWithdrawals');
+            withdrawalsTable.innerHTML = '<tr><th>ID</th><th>User</th><th>Phone</th><th>Amount</th><th>Withdraw To</th><th>Action</th></tr>';
+            data.withdrawals.forEach(w => {
+                withdrawalsTable.innerHTML += `
+                    <tr>
+                        <td>${w.id}</td>
+                        <td>${w.userName}</td>
+                        <td>${w.userPhone}</td>
+                        <td>${w.amount} Birr</td>
+                        <td>${w.withdrawToPhone}</td>
+                        <td>
+                            <button onclick="approveWithdraw('${w.id}')">Approve</button>
+                            <button class="reject" onclick="rejectWithdraw('${w.id}')">Reject</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            // Users
+            const usersTable = document.getElementById('users');
+            usersTable.innerHTML = '<tr><th>Name</th><th>Phone</th><th>Balance</th><th>Action</th></tr>';
+            data.users.forEach(u => {
+                usersTable.innerHTML += `
+                    <tr>
+                        <td>${u.name}</td>
+                        <td>${u.phone}</td>
+                        <td>${u.balance} Birr</td>
+                        <td><button onclick="viewUser('${u.phone}')">View</button></td>
+                    </tr>
+                `;
+            });
+        }
+        
+        async function approveDeposit(id) {
+            const response = await fetch('/api/admin/approve-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (response.ok) {
+                alert('Deposit approved!');
+                loadData();
+            }
+        }
+        
+        async function rejectDeposit(id) {
+            const response = await fetch('/api/admin/reject-deposit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (response.ok) {
+                alert('Deposit rejected!');
+                loadData();
+            }
+        }
+        
+        async function approveWithdraw(id) {
+            const response = await fetch('/api/admin/approve-withdraw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (response.ok) {
+                alert('Withdrawal approved! Send money via Telebirr.');
+                loadData();
+            }
+        }
+        
+        async function rejectWithdraw(id) {
+            const response = await fetch('/api/admin/reject-withdraw', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id })
+            });
+            if (response.ok) {
+                alert('Withdrawal rejected!');
+                loadData();
+            }
+        }
+        
+        async function adjustBalance() {
+            const phone = document.getElementById('userPhone').value;
+            const amount = parseInt(document.getElementById('adjustAmount').value);
+            const type = document.getElementById('adjustType').value;
+            
+            const response = await fetch('/api/admin/adjust-balance', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ phone, amount, type })
+            });
+            if (response.ok) {
+                alert('Balance adjusted!');
+                loadData();
+                document.getElementById('adjustAmount').value = '';
+            }
+        }
+        
+        async function viewUser(phone) {
+            const response = await fetch(`/api/admin/user/${phone}`);
+            const user = await response.json();
+            alert(`User: ${user.name}\nPhone: ${user.phone}\nBalance: ${user.balance} Birr`);
+        }
+        
+        setInterval(loadData, 5000);
+        loadData();
+    </script>
+</body>
+</html>

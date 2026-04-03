@@ -1,497 +1,114 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Yegna Bingo - Full Game</title>
+    <title>Yegna Bingo</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            color: white;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        h1 {
-            font-size: 3em;
-            margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .status {
-            text-align: center;
-            padding: 15px;
-            margin: 20px auto;
-            background: rgba(255,255,255,0.1);
-            border-radius: 10px;
-            max-width: 500px;
-        }
-
-        .connected {
-            background: rgba(76, 175, 80, 0.3);
-        }
-
-        .disconnected {
-            background: rgba(244, 67, 54, 0.3);
-        }
-
-        .game-container {
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            gap: 20px;
-        }
-
-        .bingo-card {
-            background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-        }
-
-        .bingo-header {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            text-align: center;
-            margin-bottom: 15px;
-        }
-
-        .bingo-letter {
-            font-size: 2em;
-            font-weight: bold;
-            color: #667eea;
-            padding: 10px;
-        }
-
-        .bingo-grid {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 8px;
-        }
-
-        .bingo-cell {
-            aspect-ratio: 1;
-            background: #f0f0f0;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.2em;
-            font-weight: bold;
-            color: #333;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .bingo-cell:hover {
-            transform: scale(1.05);
-            background: #e0e0e0;
-        }
-
-        .bingo-cell.marked {
+            font-family: Arial;
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white;
-            transform: scale(0.95);
-        }
-
-        .bingo-cell.free {
-            background: #ffd700;
-            color: #333;
-        }
-
-        .sidebar {
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-        }
-
-        .current-number {
             text-align: center;
-            font-size: 3em;
-            font-weight: bold;
-            background: rgba(255,255,255,0.2);
+            padding: 50px;
+        }
+        h1 { font-size: 3em; }
+        .status {
+            padding: 20px;
+            background: rgba(255,255,255,0.1);
             border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
+            margin: 20px;
         }
-
-        .players-list {
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
-
-        .player-item {
-            padding: 10px;
-            margin: 5px 0;
-            background: rgba(255,255,255,0.2);
-            border-radius: 5px;
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .player-item.ready {
-            background: rgba(76, 175, 80, 0.3);
-        }
-
-        .called-numbers {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-top: 10px;
-            max-height: 150px;
-            overflow-y: auto;
-        }
-
-        .called-number {
-            background: rgba(255,255,255,0.2);
-            padding: 5px 10px;
-            border-radius: 5px;
-            font-size: 0.9em;
-        }
-
-        input, button {
-            width: 100%;
-            padding: 12px;
-            margin: 10px 0;
-            border: none;
-            border-radius: 8px;
-            font-size: 1em;
-        }
-
-        input {
-            background: white;
-            color: #333;
-        }
-
         button {
-            background: #667eea;
+            background: #4CAF50;
             color: white;
+            padding: 10px 20px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.2s;
-            font-weight: bold;
         }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .bingo-btn {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-        }
-
-        .host-controls {
-            margin-top: 20px;
-            padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.2);
-        }
-
-        @media (max-width: 768px) {
-            .game-container {
-                grid-template-columns: 1fr;
-            }
-            h1 {
-                font-size: 2em;
-            }
-            .bingo-cell {
-                font-size: 0.8em;
-            }
+        input {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 5px;
+            border: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>🎮 Yegna Bingo</h1>
-            <p>Ethiopia's #1 Multiplayer Bingo Game!</p>
-        </div>
-
-        <div class="status" id="status">
-            <div id="socketStatus">⚫ Connecting to server...</div>
-        </div>
-
-        <div class="game-container">
-            <div class="bingo-card" id="bingoCard">
-                <div class="bingo-header">
-                    <div class="bingo-letter">B</div>
-                    <div class="bingo-letter">I</div>
-                    <div class="bingo-letter">N</div>
-                    <div class="bingo-letter">G</div>
-                    <div class="bingo-letter">O</div>
-                </div>
-                <div class="bingo-grid" id="bingoGrid"></div>
-            </div>
-
-            <div class="sidebar">
-                <div class="current-number" id="currentNumber">🎲 -</div>
-                
-                <h3>👤 Player Info</h3>
-                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
-                <button id="joinBtn" onclick="joinGame()">🎮 Join Game</button>
-                <button id="createBtn" onclick="createGame()">✨ Create New Game</button>
-                
-                <div id="gameControls" style="display: none;">
-                    <button id="readyBtn" onclick="setReady()">✅ Ready to Play</button>
-                    <button id="startGameBtn" onclick="startGame()" style="display: none;" class="host-controls">🚀 Start Game</button>
-                    <button id="callNumberBtn" onclick="callNumber()" style="display: none;" class="host-controls">🎲 Call Number</button>
-                    <button id="bingoBtn" class="bingo-btn" onclick="checkBingo()" disabled>🎯 BINGO!</button>
-                    <button id="leaveBtn" onclick="leaveGame()">🚪 Leave Game</button>
-                </div>
-
-                <h3>👥 Players in Game</h3>
-                <div class="players-list" id="playersList"></div>
-
-                <h3>📊 Called Numbers</h3>
-                <div class="called-numbers" id="calledNumbers"></div>
-            </div>
-        </div>
+    <h1>🎮 Yegna Bingo</h1>
+    <p>Ethiopia's #1 Multiplayer Bingo Game!</p>
+    
+    <div class="status" id="status">Connecting...</div>
+    
+    <input type="text" id="playerName" placeholder="Enter your name">
+    <button onclick="createGame()">Create Game</button>
+    <button onclick="joinGame()">Join Game</button>
+    
+    <div id="gamePanel" style="display:none; margin-top:20px;">
+        <h3>Game ID: <span id="gameId"></span></h3>
+        <button onclick="startGame()">Start Game</button>
+        <button onclick="callNumber()">Call Number</button>
+        <button onclick="bingo()" style="background:#f44336;">BINGO!</button>
+        <p>Current Number: <strong id="currentNumber">-</strong></p>
     </div>
 
     <script src="/socket.io/socket.io.js"></script>
     <script>
-        let socket;
+        const socket = io({ transports: ["websocket", "polling"] });
         let currentGameId = null;
-        let playerId = localStorage.getItem('playerId');
-        let playerName = '';
-        let isHost = false;
-        let currentCard = null;
-        let currentPlayers = [];
-
-        if (!playerId) {
-            playerId = 'player_' + Math.random().toString(36).substr(2, 9);
-            localStorage.setItem('playerId', playerId);
-        }
-
-        function generateBingoCard() {
-            const card = [];
-            const ranges = [[1,15], [16,30], [31,45], [46,60], [61,75]];
-            
-            for (let col = 0; col < 5; col++) {
-                const numbers = new Set();
-                const [min, max] = ranges[col];
-                while (numbers.size < 5) {
-                    const num = Math.floor(Math.random() * (max - min + 1)) + min;
-                    numbers.add(num);
-                }
-                const sorted = Array.from(numbers).sort((a,b) => a-b);
-                for (let row = 0; row < 5; row++) {
-                    if (!card[row]) card[row] = [];
-                    card[row][col] = { value: sorted[row], marked: false };
-                }
-            }
-            card[2][2].marked = true;
-            card[2][2].value = 'FREE';
-            return card;
-        }
-
-        function renderCard(card) {
-            const grid = document.getElementById('bingoGrid');
-            if (!grid) return;
-            grid.innerHTML = '';
-            for (let i = 0; i < 5; i++) {
-                for (let j = 0; j < 5; j++) {
-                    const cell = card[i][j];
-                    const cellDiv = document.createElement('div');
-                    cellDiv.className = 'bingo-cell';
-                    if (cell.marked) cellDiv.classList.add('marked');
-                    if (cell.value === 'FREE') cellDiv.classList.add('free');
-                    cellDiv.textContent = cell.value;
-                    if (cell.value !== 'FREE') {
-                        cellDiv.onclick = () => markNumber(cell.value, i, j);
-                    }
-                    grid.appendChild(cellDiv);
-                }
-            }
-        }
-
-        function markNumber(number, row, col) {
-            if (!currentCard || currentCard[row][col].marked) return;
-            currentCard[row][col].marked = true;
-            renderCard(currentCard);
-            if (socket && currentGameId) {
-                socket.emit('markNumber', { gameId: currentGameId, number, row, col });
-            }
-        }
-
-        function checkWin(card) {
-            for (let i = 0; i < 5; i++) {
-                if (card[i].every(cell => cell.marked)) return true;
-            }
-            for (let j = 0; j < 5; j++) {
-                let colComplete = true;
-                for (let i = 0; i < 5; i++) {
-                    if (!card[i][j].marked) colComplete = false;
-                }
-                if (colComplete) return true;
-            }
-            let diag1 = true, diag2 = true;
-            for (let i = 0; i < 5; i++) {
-                if (!card[i][i].marked) diag1 = false;
-                if (!card[i][4-i].marked) diag2 = false;
-            }
-            return diag1 || diag2;
-        }
-
-        function checkBingo() {
-            if (!currentCard) return;
-            if (checkWin(currentCard)) {
-                socket.emit('bingo', { gameId: currentGameId, playerName: playerName });
-                alert('🎉 BINGO! You won! 🎉');
-                document.getElementById('bingoBtn').disabled = true;
-            } else {
-                alert('No BINGO yet! Keep marking numbers!');
-            }
-        }
-
-        function joinGame() {
-            playerName = document.getElementById('playerName').value.trim();
-            if (!playerName) {
-                alert('Please enter your name!');
-                return;
-            }
-            socket.emit('joinGame', { playerId, playerName });
-        }
-
-        function createGame() {
-            playerName = document.getElementById('playerName').value.trim();
-            if (!playerName) {
-                alert('Please enter your name!');
-                return;
-            }
-            socket.emit('createGame', { playerId, playerName });
-        }
-
-        function setReady() {
-            socket.emit('playerReady', { gameId: currentGameId, playerId });
-        }
-
-        function startGame() {
-            socket.emit('startGame', { gameId: currentGameId });
-        }
-
-        function callNumber() {
-            socket.emit('callNumber', { gameId: currentGameId });
-        }
-
-        function leaveGame() {
-            socket.emit('leaveGame', { gameId: currentGameId, playerId });
-            currentGameId = null;
-            isHost = false;
-            document.getElementById('gameControls').style.display = 'none';
-            document.getElementById('bingoCard').style.display = 'block';
-        }
-
-        // Socket connection
-        socket = io();
-
-        socket.on('connect', () => {
-            document.getElementById('socketStatus').innerHTML = '✅ Connected to Yegna Bingo Server!';
-            document.getElementById('socketStatus').parentElement.className = 'status connected';
+        
+        socket.on("connect", () => {
+            document.getElementById("status").innerHTML = "✅ Connected to Server!";
+            document.getElementById("status").style.background = "rgba(76, 175, 80, 0.3)";
         });
-
-        socket.on('disconnect', () => {
-            document.getElementById('socketStatus').innerHTML = '❌ Disconnected from server';
-            document.getElementById('socketStatus').parentElement.className = 'status disconnected';
-        });
-
-        socket.on('gameJoined', (data) => {
+        
+        socket.on("gameCreated", (data) => {
             currentGameId = data.gameId;
-            isHost = data.isHost;
-            currentCard = generateBingoCard();
-            renderCard(currentCard);
-            document.getElementById('gameControls').style.display = 'block';
-            if (isHost) {
-                document.getElementById('startGameBtn').style.display = 'block';
-                document.getElementById('callNumberBtn').style.display = 'block';
-            } else {
-                document.getElementById('startGameBtn').style.display = 'none';
-                document.getElementById('callNumberBtn').style.display = 'none';
-            }
+            document.getElementById("gamePanel").style.display = "block";
+            document.getElementById("gameId").innerHTML = currentGameId;
         });
-
-        socket.on('gameState', (data) => {
-            currentPlayers = data.players;
-            const playersList = document.getElementById('playersList');
-            playersList.innerHTML = currentPlayers.map(p => 
-                <div class="player-item ">
-                      
-                </div>
-            ).join('');
-            
-            if (data.currentNumber) {
-                document.getElementById('currentNumber').innerHTML = 🎲 ;
-            }
-            
-            const calledDiv = document.getElementById('calledNumbers');
-            if (data.calledNumbers) {
-                calledDiv.innerHTML = data.calledNumbers.slice(-20).map(n => 
-                    <span class="called-number"></span>
-                ).join('');
-            }
-            
-            if (data.started && !data.gameEnded) {
-                document.getElementById('bingoBtn').disabled = false;
-            }
+        
+        socket.on("gameJoined", (data) => {
+            currentGameId = data.gameId;
+            document.getElementById("gamePanel").style.display = "block";
+            document.getElementById("gameId").innerHTML = currentGameId;
         });
-
-        socket.on('numberCalled', (data) => {
-            document.getElementById('currentNumber').innerHTML = 🎲 ;
-            // Auto-mark if number exists on card
-            if (currentCard) {
-                let marked = false;
-                for (let i = 0; i < 5; i++) {
-                    for (let j = 0; j < 5; j++) {
-                        if (currentCard[i][j].value === data.number && !currentCard[i][j].marked) {
-                            currentCard[i][j].marked = true;
-                            marked = true;
-                        }
-                    }
-                }
-                if (marked) renderCard(currentCard);
-            }
+        
+        socket.on("gameStarted", () => {
+            alert("Game has started!");
         });
-
-        socket.on('gameEnded', (data) => {
-            alert(🎉 GAME OVER! Winner:  🎉);
-            document.getElementById('bingoBtn').disabled = true;
-            if (!isHost) {
-                currentCard = generateBingoCard();
-                renderCard(currentCard);
-            }
+        
+        socket.on("numberCalled", (data) => {
+            document.getElementById("currentNumber").innerHTML = data.number;
+            alert("Number called: " + data.number);
         });
-
-        socket.on('error', (data) => {
-            alert(data.message);
+        
+        socket.on("gameEnded", (data) => {
+            alert("Game Over! Winner: " + data.winner);
+            document.getElementById("gamePanel").style.display = "none";
         });
-
-        // Load saved name
-        const savedName = localStorage.getItem('playerName');
-        if (savedName) {
-            document.getElementById('playerName').value = savedName;
+        
+        function createGame() {
+            const name = document.getElementById("playerName").value || "Player";
+            socket.emit("createGame", { playerName: name });
+        }
+        
+        function joinGame() {
+            const name = document.getElementById("playerName").value || "Player";
+            socket.emit("joinGame", { playerName: name });
+        }
+        
+        function startGame() {
+            socket.emit("startGame", currentGameId);
+        }
+        
+        function callNumber() {
+            socket.emit("callNumber", currentGameId);
+        }
+        
+        function bingo() {
+            const name = document.getElementById("playerName").value || "Player";
+            socket.emit("bingo", { gameId: currentGameId, playerName: name });
         }
     </script>
 </body>

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Yegna Bingo - Ethiopian Multiplayer Bingo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+        .container { max-width: 1200px; margin: 0 auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        h1 { font-size: 3em; margin-bottom: 10px; }
+        .status { text-align: center; padding: 10px; margin: 20px; background: rgba(255,255,255,0.1); border-radius: 10px; }
+        .connected { color: #4caf50; }
+        .disconnected { color: #ff9800; }
+        .game-container {
+            display: grid;
+            grid-template-columns: 1fr 300px;
+            gap: 20px;
+        }
+        .bingo-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+        }
+        .bingo-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+        .bingo-cell {
+            aspect-ratio: 1;
+            background: #f0f0f0;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #333;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .bingo-cell:hover { transform: scale(1.05); background: #e0e0e0; }
+        .bingo-cell.marked { background: linear-gradient(135deg, #667eea, #764ba2); color: white; transform: scale(0.95); }
+        .free { background: #ffd700; color: #333; }
+        .sidebar {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+        }
+        .player-list { margin-top: 20px; }
+        .player-item {
+            padding: 10px;
+            margin: 5px 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 5px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 1.1em;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 10px 0;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        button:hover { transform: translateY(-2px); }
+        .bingo-btn { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+        }
+        @media (max-width: 768px) {
+            .game-container { grid-template-columns: 1fr; }
+            h1 { font-size: 2em; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎮 Yegna Bingo</h1>
+            <p>Ethiopia's #1 Multiplayer Bingo Game!</p>
+        </div>
+        
+        <div class="status" id="status">
+            <span id="socketStatus" class="disconnected">⚫ Connecting to server...</span>
+        </div>
+        
+        <div class="game-container">
+            <div class="bingo-card">
+                <div class="bingo-grid" id="bingoGrid"></div>
+            </div>
+            
+            <div class="sidebar">
+                <h3>👤 Player Info</h3>
+                <input type="text" id="playerName" placeholder="Enter your name" maxlength="20">
+                <button onclick="joinGame()">Join Game</button>
+                
+                <div class="player-list">
+                    <h3>👥 Players Online</h3>
+                    <div id="playersList"></div>
+                </div>
+                
+                <button id="bingoBtn" class="bingo-btn" onclick="callBingo()" disabled>🎯 BINGO!</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        let socket;
+        let currentCard = [];
+        let playerName = '';
+        let isInGame = false;
+        
+        function generateBingoCard() {
+            const card = [];
+            for (let i = 0; i < 5; i++) {
+                const row = [];
+                for (let j = 0; j < 5; j++) {
+                    if (i === 2 && j === 2) {
+                        row.push({ value: 'FREE', marked: true });
+                    } else {
+                        const min = (j * 15) + 1;
+                        const max = (j + 1) * 15;
+                        const num = Math.floor(Math.random() * (max - min + 1)) + min;
+                        row.push({ value: num, marked: false });
+                    }
+                }
+                card.push(row);
+            }
+            return card;
+        }
+        
+        function renderCard(card) {
+            const grid = document.getElementById('bingoGrid');
+            grid.innerHTML = '';
+            for (let i = 0; i < 5; i++) {
+                for (let j = 0; j < 5; j++) {
+                    const cell = card[i][j];
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'bingo-cell';
+                    if (cell.marked) cellDiv.classList.add('marked');
+                    if (cell.value === 'FREE') cellDiv.classList.add('free');
+                    cellDiv.textContent = cell.value;
+                    if (cell.value !== 'FREE') {
+                        cellDiv.onclick = () => markNumber(cell.value, i, j);
+                    }
+                    grid.appendChild(cellDiv);
+                }
+            }
+        }
+        
+        function markNumber(number, row, col) {
+            if (currentCard[row][col].marked) return;
+            currentCard[row][col].marked = true;
+            renderCard(currentCard);
+            if (socket && isInGame) {
+                socket.emit('markNumber', number);
+            }
+            checkWin();
+        }
+        
+        function checkWin() {
+            // Check rows
+            for (let i = 0; i < 5; i++) {
+                if (currentCard[i].every(cell => cell.marked)) {
+                    return true;
+                }
+            }
+            // Check columns
+            for (let j = 0; j < 5; j++) {
+                let colComplete = true;
+                for (let i = 0; i < 5; i++) {
+                    if (!currentCard[i][j].marked) colComplete = false;
+                }
+                if (colComplete) return true;
+            }
+            // Check diagonals
+            let diag1 = true, diag2 = true;
+            for (let i = 0; i < 5; i++) {
+                if (!currentCard[i][i].marked) diag1 = false;
+                if (!currentCard[i][4-i].marked) diag2 = false;
+            }
+            return diag1 || diag2;
+        }
+        
+        function callBingo() {
+            if (checkWin()) {
+                socket.emit('bingo', playerName);
+                alert('🎉 BINGO! You won! 🎉');
+                document.getElementById('bingoBtn').disabled = true;
+            } else {
+                alert('No BINGO yet! Keep marking numbers!');
+            }
+        }
+        
+        function joinGame() {
+            playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Please enter your name!');
+                return;
+            }
+            currentCard = generateBingoCard();
+            renderCard(currentCard);
+            isInGame = true;
+            document.getElementById('bingoBtn').disabled = false;
+            socket.emit('joinGame', playerName);
+        }
+        
+        // Connect to server
+        socket = io();
+        
+        socket.on('connect', () => {
+            const statusDiv = document.getElementById('socketStatus');
+            statusDiv.innerHTML = '✅ Connected to Yegna Bingo Server!';
+            statusDiv.className = 'connected';
+        });
+        
+        socket.on('disconnect', () => {
+            const statusDiv = document.getElementById('socketStatus');
+            statusDiv.innerHTML = '❌ Disconnected from server';
+            statusDiv.className = 'disconnected';
+        });
+        
+        socket.on('playersUpdate', (players) => {
+            const playersList = document.getElementById('playersList');
+            if (playersList) {
+                playersList.innerHTML = players.map(p => 
+                    `<div class="player-item">${p.name}</div>`
+                ).join('');
+            }
+        });
+        
+        socket.on('joined', (data) => {
+            console.log(data.message);
+        });
+        
+        socket.on('gameEnded', (data) => {
+            alert(data.message);
+            currentCard = generateBingoCard();
+            renderCard(currentCard);
+            document.getElementById('bingoBtn').disabled = false;
+        });
+        
+        // Auto-join as guest
+        const defaultName = 'Player_' + Math.floor(Math.random() * 1000);
+        document.getElementById('playerName').value = defaultName;
+    </script>
+</body>
+</html>

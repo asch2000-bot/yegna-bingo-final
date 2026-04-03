@@ -16,7 +16,7 @@ app.use(express.json());
 app.use(express.static("public"));
 
 // Telegram Bot Setup
-const BOT_TOKEN = '8632918540:AAFvClmPVs1iiEINelqVkc3pditMwadfyl0';
+const BOT_TOKEN = '8533928458:AAHH5PUtQVgv5XKN7PrBqJP-LeyEP5B0Sio';
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
 
 // Your Render URL

@@ -1,4 +1,4 @@
-﻿{
+{
   "name": "yegna-bingo",
   "version": "1.0.0",
   "description": "Yegna Bingo Game",
@@ -7,8 +7,9 @@
     "start": "node server.js"
   },
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "socket.io": "^4.5.4",
-    "cors": "^2.8.5"
+    "node-telegram-bot-api": "^0.67.0",
+    "socket.io": "^4.5.4"
   }
 }

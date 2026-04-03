@@ -3,6 +3,7 @@ const http = require("http");
 const socketIo = require("socket.io");
 const cors = require("cors");
 const path = require("path");
+const TelegramBot = require('node-telegram-bot-api');
 
 const app = express();
 const server = http.createServer(app);
@@ -13,6 +14,82 @@ const io = socketIo(server, {
 app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
+
+// Telegram Bot Setup
+const BOT_TOKEN = '8632918540:AAFvClmPVs1iiEINelqVkc3pditMwadfyl0';
+const bot = new TelegramBot(BOT_TOKEN, { polling: true });
+
+// Your Render URL
+const RENDER_URL = 'https://yegna-bingo-final-1.onrender.com';
+
+// Bot commands
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+  const firstName = msg.from.first_name || 'Player';
+  
+  bot.sendMessage(chatId, `
+?? *Welcome to Yegna Bingo!* ??
+
+Ethiopia's #1 Multiplayer Bingo Game!
+
+*How to Play:*
+1. Click the link below
+2. Enter your name
+3. Create or join a game
+4. Mark numbers on your card
+5. Get 5 in a row and shout BINGO!
+
+?? *Play Now:* ${RENDER_URL}
+
+Share this link with friends and play together! ????
+  `, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/help/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, `
+*Yegna Bingo Commands:*
+
+/start - Start the game
+/help - Show this help
+/play - Get game link
+/rules - Game rules
+
+*Game Rules:*
+• 5x5 Bingo card with random numbers
+• Numbers called every 5 seconds
+• Mark matching numbers
+• Get 5 in a row (horizontal, vertical, or diagonal)
+• Click BINGO to win!
+
+Play now: ${RENDER_URL}
+  `, { parse_mode: 'Markdown' });
+});
+
+bot.onText(/\/play/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, `?? Play Yegna Bingo now: ${RENDER_URL}`);
+});
+
+bot.onText(/\/rules/, (msg) => {
+  const chatId = msg.chat.id;
+  bot.sendMessage(chatId, `
+*Yegna Bingo Rules:*
+
+1. Each player gets a 5x5 Bingo card
+2. Numbers are called randomly (1-75)
+3. Mark numbers that match your card
+4. Get 5 marked numbers in a row (horizontal, vertical, or diagonal)
+5. Click "BINGO!" to win!
+
+*Pro Tips:*
+• The center space is FREE!
+• Play with 2-10 players
+• First to get BINGO wins!
+
+Good luck! ??
+  `, { parse_mode: 'Markdown' });
+});
 
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
@@ -207,6 +284,9 @@ io.on("connection", (socket) => {
       game.endGame(data.playerName);
       io.to(data.gameId).emit("gameEnded", { winner: data.playerName });
       io.to(data.gameId).emit("gameState", game.getState());
+      
+      // Send notification to Telegram
+      bot.sendMessage(process.env.TELEGRAM_CHAT_ID || 'YOUR_CHAT_ID', `?? BINGO! ${data.playerName} won the game! ??\n\nPlay again: ${RENDER_URL}`);
     }
   });
   
@@ -249,4 +329,5 @@ io.on("connection", (socket) => {
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log("Server running on port " + PORT);
+  console.log("Telegram bot is active!");
 });

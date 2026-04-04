@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: yegna-bingo-bot
+    env: node
+    buildCommand: npm install
+    startCommand: node telegram-bot.js
+    envVars:
+      - key: BOT_TOKEN
+        value: 8632918540:AAFvCImPVs1iiEINeIqVkc3pditMwadfyl0
+      - key: ADMIN_ID
+        value: 5220704820
+      - key: GAME_URL
+        value: https://yegna-bingo-final-1.onrender.com

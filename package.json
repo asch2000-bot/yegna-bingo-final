@@ -1,16 +1,36 @@
 {
   "name": "yegna-bingo",
-  "version": "1.0.0",
-  "description": "Yegna Bingo Game",
+  "version": "2.0.0",
+  "description": "Yegna Bingo - Real Money Multiplayer Bingo Game with Telegram Mini App",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "bot": "node telegram-bot.js",
+    "mini-bot": "node mini-bot.js",
+    "dev": "nodemon server.js"
   },
+  "keywords": [
+    "bingo",
+    "telegram",
+    "gaming",
+    "ethiopia",
+    "telebirr"
+  ],
+  "author": "Yegna Bingo",
+  "license": "ISC",
   "dependencies": {
-    "axios": "^1.14.0",
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "node-telegram-bot-api": "^0.67.0",
-    "socket.io": "^4.5.4"
+    "socket.io": "^4.5.4",
+    "cors": "^2.8.5",
+    "node-telegram-bot-api": "^0.61.0",
+    "dotenv": "^16.0.3",
+    "uuid": "^9.0.1",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

@@ -16,6 +16,11 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static("public"));
 
+// ============ HEALTH CHECK FOR RENDER ============
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
 // ============ DATA FILES SETUP ============
 const dataDir = path.join(__dirname, "data");
 if (!fs.existsSync(dataDir)) {
@@ -110,7 +115,6 @@ class BingoGame {
         this.winner = player;
         this.status = "finished";
         
-        // Add winnings to user balance
         const user = users[player.id];
         if (user) {
           const winnings = player.chosenNumbers.length * 50;
@@ -151,10 +155,6 @@ app.get("/admin", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
-app.get("/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date().toISOString() });
-});
-
 // Mini App registration - NO TOKEN NEEDED!
 app.post("/api/register-miniapp", (req, res) => {
   const { phone, name, telegramId } = req.body;
@@ -167,13 +167,11 @@ app.post("/api/register-miniapp", (req, res) => {
   const existingUser = Object.values(users).find(u => u.phone === phone);
   
   if (existingUser) {
-    // Update existing user with telegram ID
     existingUser.telegramId = telegramId;
     existingUser.name = name;
     saveUsers();
     res.json({ success: true, userId: existingUser.id, balance: existingUser.balance });
   } else {
-    // Create new user
     const userId = require("crypto").randomBytes(16).toString("hex");
     users[userId] = {
       id: userId,
@@ -474,11 +472,21 @@ io.on("connection", (socket) => {
   });
 });
 
-// ============ START SERVER ============
-const PORT = process.env.PORT || 3000;
+// ============ START SERVER - FIXED FOR RENDER ============
+const PORT = process.env.PORT || 10000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📍 Game URL: http://localhost:${PORT}`);
   console.log(`📍 Admin URL: http://localhost:${PORT}/admin`);
+  console.log(`✅ Health check: http://localhost:${PORT}/health`);
   console.log(`✅ Mini App ready - No token required!`);
+});
+
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, closing server...');
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
 });
